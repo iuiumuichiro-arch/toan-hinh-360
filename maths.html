@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toán Hình Học 360° (Lớp 1 - Lớp 12)</title>
+  <link rel="stylesheet" href="toan-hinh-360.css" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <h1>Toán Hình Học 360°</h1>
+      <p>Khám phá hình phẳng &amp; hình không gian từ Lớp 1 đến Lớp 12 ở mọi góc nhìn 360°</p>
+    </header>
+
+    <section class="controls-panel">
+      <div class="control-group">
+        <label for="gradeSelect">Cấp / Lớp:</label>
+        <select id="gradeSelect">
+          <option value="all">Tất cả (Lớp 1 - 12)</option>
+          <option value="1-5">Lớp 1 - 5: Hình cơ bản</option>
+          <option value="6-9">Lớp 6 - 9: Hình học trực quan &amp; Trụ/Nón/Cầu</option>
+          <option value="10-12">Lớp 10 - 12: Đa diện, Mặt tròn xoay &amp; Oxyz</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label for="shapeSelect">Chọn hình học:</label>
+        <select id="shapeSelect"></select>
+      </div>
+
+      <div class="control-group">
+        <label for="rotY">Xoay ngang (0° - 360°): <span id="rotYVal">35°</span></label>
+        <input id="rotY" type="range" min="0" max="360" value="35" />
+      </div>
+
+      <div class="control-group">
+        <label for="rotX">Xoay dọc (0° - 360°): <span id="rotXVal">335°</span></label>
+        <input id="rotX" type="range" min="0" max="360" value="335" />
+      </div>
+
+      <div class="btn-group">
+        <button id="autoSpinBtn" type="button">Tự xoay 360°: Bật</button>
+        <button id="wireframeBtn" type="button">Khung dây: Tắt</button>
+        <button id="resetViewBtn" type="button">Đặt lại góc</button>
+      </div>
+    </section>
+
+    <main class="workspace">
+      <div id="stage" class="stage" title="Kéo chuột hoặc vuốt để xoay 360°">
+        <div class="floor-grid"></div>
+        <div id="pivot" class="pivot"></div>
+        <div class="hud-angle">
+          Góc nhìn: Ngang <strong id="hudY">35°</strong> | Dọc <strong id="hudX">335°</strong>
+        </div>
+      </div>
+
+      <aside class="info-card">
+        <span id="shapeBadge" class="badge">Lớp 1 - 5</span>
+        <h2 id="shapeTitle">Hình Lập Phương</h2>
+        <p id="shapeDesc" class="desc"></p>
+        <div class="formula-box">
+          <strong>Công thức / Tính chất nổi bật:</strong>
+          <div id="shapeFormula"></div>
+        </div>
+        <div class="quick-angles">
+          <span>Góc nhanh:</span>
+          <button type="button" data-angle="0,0">Chính diện (0°)</button>
+          <button type="button" data-angle="90,0">Bên phải (90°)</button>
+          <button type="button" data-angle="180,0">Mặt sau (180°)</button>
+          <button type="button" data-angle="270,0">Bên trái (270°)</button>
+          <button type="button" data-angle="0,270">Từ trên (90°)</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const SHAPES = [
+      {
+        id: "square-1",
+        grade: "1-5",
+        badge: "Lớp 1 - 2",
+        name: "Hình Vuông (Mặt phẳng 2 chiều xoay 360°)",
+        type: "plane",
+        w: 170,
+        h: 170,
+        desc: "Hình có 4 cạnh bằng nhau và 4 góc vuông. Khi xoay 360° quanh trục, bạn thấy đủ 2 mặt trước/sau và độ dày trực quan.",
+        formula: "Chu vi: P = 4 × a | Diện tích: S = a × a"
+      },
+      {
+        id: "triangle-3",
+        grade: "1-5",
+        badge: "Lớp 3 - 5",
+        name: "Hình Tam Giác Đều (Xoay 360°)",
+        type: "prism3",
+        size: 160,
+        depth: 44,
+        desc: "Hình có 3 cạnh bằng nhau và 3 góc 60°. Xoay 360° giúp quan sát đỉnh, cạnh đáy và mặt cắt hai bên.",
+        formula: "Chu vi: P = 3 × a | Diện tích: S = (a × h) / 2"
+      },
+      {
+        id: "box-5",
+        grade: "1-5",
+        badge: "Lớp 5",
+        name: "Hình Hộp Chữ Nhật",
+        type: "box",
+        w: 210,
+        h: 130,
+        d: 140,
+        desc: "Có 6 mặt đều là hình chữ nhật, 12 cạnh và 8 đỉnh. Xoay 360° để đối chiếu các cặp mặt đối diện bằng nhau.",
+        formula: "Diện tích xung quanh: Sxq = 2 × (a + b) × h | Thể tích: V = a × b × h"
+      },
+      {
+        id: "cube-5",
+        grade: "1-5",
+        badge: "Lớp 5",
+        name: "Hình Lập Phương",
+        type: "box",
+        w: 160,
+        h: 160,
+        d: 160,
+        desc: "Trường hợp đặc biệt của hình hộp chữ nhật với 6 mặt là 6 hình vuông bằng nhau.",
+        formula: "Sxq = 4 × a² | Stp = 6 × a² | Thể tích: V = a³"
+      },
+      {
+        id: "cylinder-9",
+        grade: "6-9",
+        badge: "Lớp 9",
+        name: "Hình Trụ Tròn Xoay",
+        type: "cylinder",
+        r: 78,
+        h: 175,
+        desc: "Tạo thành khi quay hình chữ nhật một vòng (360°) quanh một cạnh cố định. Hai đáy là hai hình tròn bằng nhau.",
+        formula: "Sxq = 2πrh | V = πr²h"
+      },
+      {
+        id: "cone-9",
+        grade: "6-9",
+        badge: "Lớp 9",
+        name: "Hình Nón Tròn Xoay",
+        type: "cone",
+        r: 86,
+        h: 170,
+        desc: "Sinh ra khi quay tam giác vuông một vòng quanh một cạnh góc vuông. Xoay 360° để thấy mặt xung quanh và đáy tròn.",
+        formula: "Sxq = πrl | V = (1/3)πr²h"
+      },
+      {
+        id: "sphere-9",
+        grade: "6-9",
+        badge: "Lớp 9",
+        name: "Hình Cầu & Kinh Vĩ Tuyến 360°",
+        type: "sphere",
+        r: 92,
+        desc: "Tạo thành khi quay nửa hình tròn 360° quanh đường kính. Các vòng kinh tuyến giúp theo dõi góc xoay 360° dễ dàng.",
+        formula: "Diện tích mặt cầu: S = 4πr² | Thể tích: V = (4/3)πr³"
+      },
+      {
+        id: "pyramid-11",
+        grade: "10-12",
+        badge: "Lớp 11",
+        name: "Hình Chóp Tứ Giác Đều",
+        type: "pyramid4",
+        base: 165,
+        h: 165,
+        desc: "Đáy là hình vuông, các mặt bên là các tam giác cân bằng nhau có chung đỉnh S. Xoay 360° quan sát 4 mặt bên và đáy.",
+        formula: "V = (1/3) × S_đáy × h | Sxq = p × d (nửa chu vi đáy × trung đoạn)"
+      },
+      {
+        id: "octahedron-12",
+        grade: "10-12",
+        badge: "Lớp 12",
+        name: "Khối Bát Diện Đều (8 Mặt)",
+        type: "octahedron",
+        size: 120,
+        desc: "Một trong 5 khối đa diện đều (loại {3,4}): gồm 8 mặt là các tam giác đều, 12 cạnh và 6 đỉnh.",
+        formula: "Thể tích: V = (√2 / 3) × a³ | Diện tích toàn phần: Stp = 2√3 × a²"
+      },
+      {
+        id: "oxyz-12",
+        grade: "10-12",
+        badge: "Lớp 12 - Oxyz",
+        name: "Hệ Trục Tọa Độ Oxyz & Khối Hộp Vector",
+        type: "oxyz",
+        w: 170,
+        h: 170,
+        d: 170,
+        desc: "Trực quan hóa 3 trục Ox (đỏ), Oy (xanh lá), Oz (xanh dương) và không gian tọa độ khi xoay toàn bộ 360°.",
+        formula: "Độ dài vector: |u| = √(x² + y² + z²) | Tích có hướng: [u, v]"
+      }
+    ];
+
+    const gradeSelect = document.getElementById("gradeSelect");
+    const shapeSelect = document.getElementById("shapeSelect");
+    const pivot = document.getElementById("pivot");
+    const stage = document.getElementById("stage");
+    const rotYInput = document.getElementById("rotY");
+    const rotXInput = document.getElementById("rotX");
+    const rotYVal = document.getElementById("rotYVal");
+    const rotXVal = document.getElementById("rotXVal");
+    const hudY = document.getElementById("hudY");
+    const hudX = document.getElementById("hudX");
+    const autoSpinBtn = document.getElementById("autoSpinBtn");
+    const wireframeBtn = document.getElementById("wireframeBtn");
+    const resetViewBtn = document.getElementById("resetViewBtn");
+
+    const shapeBadge = document.getElementById("shapeBadge");
+    const shapeTitle = document.getElementById("shapeTitle");
+    const shapeDesc = document.getElementById("shapeDesc");
+    const shapeFormula = document.getElementById("shapeFormula");
+
+    let angleY = 35;
+    let angleX = 335;
+    let autoSpin = true;
+    let wireframe = false;
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function norm360(deg) {
+      return ((deg % 360) + 360) % 360;
+    }
+
+    function applyRotation() {
+      angleY = norm360(angleY);
+      angleX = norm360(angleX);
+      const ry = Math.round(angleY);
+      const rx = Math.round(angleX);
+      pivot.style.transform = rotateX(${rx}deg) rotateY(${ry}deg);
+      rotYInput.value = ry;
+      rotXInput.value = rx;
+      rotYVal.textContent = ${ry}°;
+      rotXVal.textContent = ${rx}°;
+      hudY.textContent = ${ry}°;
+      hudX.textContent = ${rx}°;
+    }
+
+    function populateShapes() {
+      const g = gradeSelect.value;
+      const filtered = g === "all" ? SHAPES : SHAPES.filter((s) => s.grade === g);
+      shapeSelect.innerHTML = "";
+      filtered.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = [${s.badge}] ${s.name};
+        shapeSelect.appendChild(opt);
+      });
+      if (filtered.length > 0) {
+        renderShape(filtered[0].id);
+      }
+    }
+
+    function buildBox(w, h, d, isOxyz = false) {
+      const hw = w / 2;
+      const hh = h / 2;
+      const hd = d / 2;
+      const faces = [
+        { cls: "face front", label: isOxyz ? "Mặt xOy (+z)" : "Trước", tr: translateZ(${hd}px), w, h },
+        { cls: "face back", label: isOxyz ? "Mặt xOy (-z)" : "Sau", tr: rotateY(180deg) translateZ(${hd}px), w, h },
+        { cls: "face right", label: isOxyz ? "Mặt yOz (+x)" : "Phải", tr: rotateY(90deg) translateZ(${hw}px), w: d, h },
+        { cls: "face left", label: isOxyz ? "Mặt yOz (-x)" : "Trái", tr: rotateY(-90deg) translateZ(${hw}px), w: d, h },
+        { cls: "face top", label: isOxyz ? "Mặt xOz (+y)" : "Trên", tr: rotateX(90deg) translateZ(${hh}px), w, h: d },
+        { cls: "face bottom", label: isOxyz ? "Mặt xOz (-y)" : "Dưới", tr: rotateX(-90deg) translateZ(${hh}px), w, h: d }
+      ];
+      return faces
+        .map(
+          (f) =>
+            <div class="${f.cls}" style="width:${f.w}px;height:${f.h}px;margin-left:${-f.w / 2}px;margin-top:${-f.h / 2}px;transform:${f.tr};">${f.label}</div>
+        )
+        .join("");
+    }
+
+    function buildCylinder(r, h) {
+      const segments = 24;
+      const sideW = ((2 * Math.PI * r) / segments).toFixed(2);
+      const step = 360 / segments;
+      let html = "";
+      for (let i = 0; i < segments; i++) {
+        const rot = i * step;
+        html += <div class="face cyl-side" style="width:${Number(sideW) + 1.5}px;height:${h}px;margin-left:${-(Number(sideW) + 1.5) / 2}px;margin-top:${-h / 2}px;transform:rotateY(${rot}deg) translateZ(${r}px);"></div>;
+      }
+      html += <div class="face cap" style="width:${r * 2}px;height:${r * 2}px;margin-left:${-r}px;margin-top:${-r}px;border-radius:50%;transform:translateY(${-h / 2}px) rotateX(90deg);">Đáy trên</div>;
+      html += <div class="face cap" style="width:${r * 2}px;height:${r * 2}px;margin-left:${-r}px;margin-top:${-r}px;border-radius:50%;transform:translateY(${h / 2}px) rotateX(-90deg);">Đáy dưới</div>;
+      return html;
+    }
+
+    function buildCone(r, h) {
+      const segments = 24;
+      const sideW = ((2 * Math.PI * r) / segments).toFixed(2);
+      const slant = Math.hypot(r, h).toFixed(1);
+      const tiltDeg = ((Math.atan2(r, h) * 180) / Math.PI).toFixed(1);
+      const step = 360 / segments;
+      let html = "";
+      for (let i = 0; i < segments; i++) {
+        const rot = i * step;
+        const midZ = (r / 2).toFixed(1);
+        html += <div class="face cone-side" style="width:${Number(sideW) + 1.5}px;height:${slant}px;margin-left:${-(Number(sideW) + 1.5) / 2}px;margin-top:${-slant / 2}px;transform:rotateY(${rot}deg) translateZ(${midZ}px) rotateX(${tiltDeg}deg);">Mặt nón</div>;
+      }
+      html += <div class="face cap" style="width:${r * 2}px;height:${r * 2}px;margin-left:${-r}px;margin-top:${-r}px;border-radius:50%;transform:translateY(${h / 2}px) rotateX(-90deg);">Đáy tròn</div>;
+      return html;
+    }
+
+    function buildSphere(r) {
+      let html = "";
+      for (let i = 0; i < 6; i++) {
+        html += <div class="sphere-ring" style="width:${r * 2}px;height:${r * 2}px;margin-left:${-r}px;margin-top:${-r}px;transform:rotateY(${i * 30}deg);"></div>;
+      }
+      for (let j = -2; j <= 2; j++) {
+        const latAngle = j * 28;
+        const radLat = (latAngle * Math.PI) / 180;
+        const ringR = Math.cos(radLat) * r;
+        const offsetY = -Math.sin(radLat) * r;
+        html += <div class="sphere-ring" style="width:${ringR * 2}px;height:${ringR * 2}px;margin-left:${-ringR}px;margin-top:${-ringR}px;transform:translateY(${offsetY.toFixed(1)}px) rotateX(90deg);"></div>;
+      }
+      return html;
+    }
+
+    function buildPyramid4(base, h) {
+      const half = base / 2;
+      const slant = Math.hypot(half, h).toFixed(1);
+      const tiltDeg = ((Math.atan2(half, h) * 180) / Math.PI).toFixed(1);
+      const sides = [0, 90, 180, 270];
+      let html = <div class="face cap" style="width:${base}px;height:${base}px;margin-left:${-half}px;margin-top:${-half}px;transform:translateY(${h / 2}px) rotateX(-90deg);">Đáy vuông</div>;
+      sides.forEach((deg, idx) => {
+        html += <div class="face tri-side" style="width:${base}px;height:${slant}px;margin-left:${-half}px;margin-top:${-slant / 2}px;transform:rotateY(${deg}deg) translateZ(${half / 2}px) rotateX(${tiltDeg}deg);clip-path:polygon(50% 0%, 0% 100%, 100% 100%);">Mặt ${idx + 1}</div>;
+      });
+      return html;
+    }
+
+    function buildOctahedron(size) {
+      const half = size / 2;
+      const slant = Math.hypot(half, size * 0.78).toFixed(1);
+      const tilt = 35.26;
+      const sides = [0, 90, 180, 270];
+      let html = "";
+      sides.forEach((deg) => {
+        html += <div class="face tri-side" style="width:${size}px;height:${slant}px;margin-left:${-half}px;margin-top:${-slant / 2}px;transform:rotateY(${deg}deg) translateZ(${(half * 0.65).toFixed(1)}px) rotateX(${tilt}deg);clip-path:polygon(50% 0%, 0% 100%, 100% 100%);"></div>;
+        html += <div class="face tri-side" style="width:${size}px;height:${slant}px;margin-left:${-half}px;margin-top:${-slant / 2}px;transform:rotateY(${deg}deg) translateZ(${(half * 0.65).toFixed(1)}px) rotateX(${180 - tilt}deg);clip-path:polygon(50% 0%, 0% 100%, 100% 100%);"></div>;
+      });
+      return html;
+    }
+
+    function buildPlane(w, h) {
+      return `
+        <div class="face front" style="width:${w}px;height:${h}px;margin-left:${-w / 2}px;margin-top:${-h / 2}px;transform:translateZ(6px);">Mặt trước</div>
+        <div class="face back" style="width:${w}px;height:${h}px;margin-left:${-w / 2}px;margin-top:${-h / 2}px;transform:rotateY(180deg) translateZ(6px);">Mặt sau</div>
+      `;
+    }
+
+    function buildPrism3(size, depth) {
+      const hTri = (size * Math.sqrt(3)) / 2;
+      const halfD = depth / 2;
+      return `
+        <div class="face tri-side" style="width:${size}px;height:${hTri.toFixed(1)}px;margin-left:${-size / 2}px;margin-top:${-hTri / 2}px;transform:translateZ(${halfD}px);clip-path:polygon(50% 0%, 0% 100%, 100% 100%);">Tam giác đều</div>
+        <div class="face tri-side" style="width:${size}px;height:${hTri.toFixed(1)}px;margin-left:${-size / 2}px;margin-top:${-hTri / 2}px;transform:rotateY(180deg) translateZ(${halfD}px);clip-path:polygon(50% 0%, 0% 100%, 100% 100%);">Mặt sau</div>
+        <div class="face right" style="width:${depth}px;height:${size}px;margin-left:${-depth / 2}px;margin-top:${-size / 2}px;transform:rotateY(90deg) translateZ(${size / 2}px);">Cạnh</div>
+      `;
+    }
+
+    function renderShape(id) {
+      const shape = SHAPES.find((s) => s.id === id) || SHAPES[0];
+      shapeBadge.textContent = shape.badge;
+      shapeTitle.textContent = shape.name;
+      shapeDesc.textContent = shape.desc;
+      shapeFormula.textContent = shape.formula;
+
+      let content = "";
+      if (shape.type === "box") content = buildBox(shape.w, shape.h, shape.d, false);
+      else if (shape.type === "oxyz") {
+        content =
+          buildBox(shape.w, shape.h, shape.d, true) +
+          `<div class="axis axis-x"><span>+Ox</span></div>
+           <div class="axis axis-y"><span>+Oy</span></div>
+           <div class="axis axis-z"><span>+Oz</span></div>`;
+      } else if (shape.type === "cylinder") content = buildCylinder(shape.r, shape.h);
+      else if (shape.type === "cone") content = buildCone(shape.r, shape.h);
+      else if (shape.type === "sphere") content = buildSphere(shape.r);
+      else if (shape.type === "pyramid4") content = buildPyramid4(shape.base, shape.h);
+      else if (shape.type === "octahedron") content = buildOctahedron(shape.size);
+      else if (shape.type === "plane") content = buildPlane(shape.w, shape.h);
+      else if (shape.type === "prism3") content = buildPrism3(shape.size, shape.depth);
+
+      pivot.innerHTML = content;
+      applyRotation();
+    }
+
+    gradeSelect.addEventListener("change", populateShapes);
+    shapeSelect.addEventListener("change", (e) => renderShape(e.target.value));
+
+    rotYInput.addEventListener("input", (e) => {
+      angleY = Number(e.target.value);
+      applyRotation();
+    });
+
+    rotXInput.addEventListener("input", (e) => {
+      angleX = Number(e.target.value);
+      applyRotation();
+    });
+
+    autoSpinBtn.addEventListener("click", () => {
+      autoSpin = !autoSpin;
+      autoSpinBtn.textContent = Tự xoay 360°: ${autoSpin ? "Bật" : "Tắt"};
+    });
+
+    wireframeBtn.addEventListener("click", () => {
+      wireframe = !wireframe;
+      pivot.classList.toggle("wireframe", wireframe);
+      wireframeBtn.textContent = Khung dây: ${wireframe ? "Bật" : "Tắt"};
+    });
+
+    resetViewBtn.addEventListener("click", () => {
+      angleY = 35;
+      angleX = 335;
+      applyRotation();
+    });
+
+    document.querySelectorAll(".quick-angles button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const [y, x] = btn.dataset.angle.split(",").map(Number);
+        angleY = y;
+        angleX = x;
+        applyRotation();
+      });
+    });
+
+    stage.addEventListener("pointerdown", (e) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      stage.setPointerCapture(e.pointerId);
+    });
+
+    stage.addEventListener("pointermove", (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      angleY += dx * 0.7;
+      angleX -= dy * 0.7;
+      applyRotation();
+    });
+
+    stage.addEventListener("pointerup", () => {
+      isDragging = false;
+    });
+
+    function animate() {
+      if (autoSpin && !isDragging) {
+        angleY += 0.45;
+        applyRotation();
+      }
+      requestAnimationFrame(animate);
+    }
+
+    populateShapes();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
